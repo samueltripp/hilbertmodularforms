@@ -1,6 +1,6 @@
 load "config.m";
 
-// Helper Functions
+// Helper Functions a
 PW := function(k,degree)
   return [k:i in [1..degree]];
 end function;

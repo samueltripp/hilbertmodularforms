@@ -6,40 +6,26 @@ ModFrmHilD
 
 declare type ModFrmHilD [ModFrmHilDElt];
 declare attributes ModFrmHilD:
-  Field, // FldNum : totally real field
-  Integers, // RngOrd : ZF
-  NarrowClassGroup, // GrpAb
-  NarrowClassNumber, // RngIntElt
-  NarrowClassGroupMap, // Map : GrpAb -> Set of fractional ideals of ZF
-  NarrowClassGroupRepresentatives, // SeqEnum[RngOrdElt/RngFracElt]
+  Parent, // ModFrmHilDGRng
+  Weight, // SeqEnum[RngIntElt]
+  Level, // RngOrdIdl
+    Dimension, // RngIntElt
+  Character; // GrpHeckeElt
 
-  Precision, // RngIntElt : precision for all expansions with this parent
-  Ideals, // SeqEnum[RngOrdIdl]
-  Primes, //
-  Dictionary, // Assoc maps Ideals[i] to i
-  MultiplicationTable, // SeqEnum[pairs of integers]
-  Representatives, // SeqEnum[nu]
-  DictionaryRepresentatives, // Assoc maps Representatives[i] to i
-
-  // Book keeping
-  // Caching the computation of EigenForms
-  HeckeEigenvalues;
-  // a dobule indexed Associative Array (level, weight) --> a list of hecke eigenvalues per orbit
 
 ////////// ModFrmHilD fundamental intrinsics //////////
 
-intrinsic PercentM(M::ModFrmHilD) -> MonStgElt
-  {returns a string to produce M in a magma session.}
-  return Sprintf("HMFSpace(%m, %m)", BaseField(M), Precision(M));
-end intrinsic;
-
-intrinsic Print(M::ModFrmHilD, level::MonStgElt)
+intrinsic Print(Mk::ModFrmHilD, level::MonStgElt)
   {}
+  M := Parent(Mk);
   if level in ["Default", "Minimal", "Maximal"] then
-    printf "Space of Hilbert modular forms over %o.\n", M`Field;
-    printf "Precision: %o\n", M`Precision;
+    printf "Space of Hilbert modular forms over %o\n", BaseField(M);
+    printf "Precision: %o\n", Precision(M);
+    printf "Weight: %o\n", Weight(Mk);
+    printf "Character: %o\n", Character(Mk);
+    printf "Level: %o", IdealOneLine(Level(Mk));
   elif level eq "Magma" then
-    printf "%o", PercentM(M);
+    error "not implemented!";
   else
     error "not a valid printing level.";
   end if;
@@ -56,95 +42,53 @@ end intrinsic;
 
 intrinsic 'eq'(M1::ModFrmHilD, M2::ModFrmHilD) -> BoolElt
   {True iff the two spaces of Hilbert modular forms are identically the same}
-  return IsIdentical(M1, M2);
+return Parent(M1) eq Parent(M2) and Weight(M1) eq Weight(M2) and
+Level(M1) eq Level(M2) and Character(M1) eq Character(M2);
 end intrinsic;
-
 
 ////////// ModFrmHilD access to attributes //////////
 
-intrinsic BaseField(M::ModFrmHilD) -> FldAlg
-  {The base field of the space M of Hilbert modular forms.}
-  return M`Field;
-end intrinsic;
-
-intrinsic Integers(M::ModFrmHilD) -> RngOrd
+intrinsic Parent(Mk::ModFrmHilD) -> ModFrmHilDGRng
   {}
-  return M`Integers;
+  return Mk`Parent;
 end intrinsic;
 
-intrinsic NarrowClassGroup(M::ModFrmHilD) -> GrpAb
+intrinsic Weight(Mk::ModFrmHilD) -> SeqEnum[RngIntElt]
   {}
-  return M`NarrowClassGroup;
+  return Mk`Weight;
 end intrinsic;
 
-intrinsic NarrowClassNumber(M::ModFrmHilD) -> RngIntElt
+intrinsic Level(Mk::ModFrmHilD) -> RngOrdIdl
   {}
-  return M`NarrowClassNumber;
+  return Mk`Level;
 end intrinsic;
 
-intrinsic NarrowClassGroupMap(M::ModFrmHilD) -> Map
+intrinsic Character(Mk::ModFrmHilD) -> GrpHeckeElt
   {}
-  return M`NarrowClassGroupMap;
+  return Mk`Character;
 end intrinsic;
 
-intrinsic NarrowClassGroupRepresentatives(M::ModFrmHilD) -> Map
+intrinsic Dim(Mk::ModFrmHilD) -> RngIntElt
+{}
+if not assigned Mk`Dimension then 
+ComputeDimension(Mk);
+end if;
+return Mk`Dimension;
+end intrinsic;
+
+/* attributes of the parent */
+
+intrinsic BaseField(Mk::ModFrmHilD) -> Any
   {}
-  return M`NarrowClassGroupRepresentatives;
+  return BaseField(Parent(Mk));
 end intrinsic;
 
-intrinsic Precision(M::ModFrmHilD) -> RngIntElt
-  {The Precision of the space M of Hilbert modular forms.}
-  return M`Precision;
-end intrinsic;
-
-intrinsic Ideals(M::ModFrmHilD) -> SeqEnum[RngOrdIdl]
-  {The Ideals of the space M of Hilbert modular forms.}
-  return M`Ideals;
-end intrinsic;
-
-intrinsic Primes(M::ModFrmHilD) -> SeqEnum[RngOrdIdl]
+intrinsic Integers(Mk::ModFrmHilD) -> Any
   {}
-  return M`Primes;
+  return Integers(Parent(Mk));
 end intrinsic;
 
-intrinsic Dictionary(M::ModFrmHilD) -> Assoc
-  {The dictionary for ideals of the space M of Hilbert modular forms.}
-  return M`Dictionary;
-end intrinsic;
-
-// TODO add text
-intrinsic MultiplicationTable(M::ModFrmHilD) -> SeqEnum
-  {}
-  if not assigned M`MultiplicationTable then
-    assert HMFEquipWithMultiplication(M);
-  end if;
-  return M`MultiplicationTable;
-end intrinsic;
-
-// TODO add text
-intrinsic DictionaryRepresentatives(M::ModFrmHilD) -> Assoc
-  {}
-  if not assigned M`DictionaryRepresentatives then
-    assert HMFEquipWithMultiplication(M);
-  end if;
-  return M`DictionaryRepresentatives;
-end intrinsic;
-
-// TODO add text
-intrinsic Representatives(M::ModFrmHilD) -> SeqEnum
-  {}
-  if not assigned M`Representatives then
-    assert HMFEquipWithMultiplication(M);
-  end if;
-  return M`Representatives;
-end intrinsic;
-
-intrinsic HeckeEigenvalues(M::ModFrmHilD) -> Assoc
-  {}
-  return M`HeckeEigenvalues;
-end intrinsic;
-
-////////// ModFrmHilD creation functions //////////
+////////// ModFrmHilD creation and multiplication functions //////////
 
 intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   {Create an empty ModFrmHilD object.}
@@ -152,90 +96,95 @@ intrinsic ModFrmHilDInitialize() -> ModFrmHilD
   return M;
 end intrinsic;
 
-intrinsic HMFSpace(F::FldNum, prec::RngIntElt) -> ModFrmHilD
-  {Generates the space ModFrmHilD over F with level N.}
-  assert IsTotallyReal(F);
-  M := ModFrmHilDInitialize();
-  // field
-  M`Field := F;
-  M`Integers := Integers(F);
-  // narrow class group
-  Cl, mp := NarrowClassGroup(F);
-  M`NarrowClassGroup := Cl;
-  M`NarrowClassNumber := #Cl;
-  M`NarrowClassGroupMap := mp;
-  M`NarrowClassGroupRepresentatives := [ mp(g) : g in Cl ];
-  // prec
-  M`Precision := prec;
-  // ideals
-  zero_ideal := ideal<Integers(F)|0>;
-  Is := [zero_ideal] cat IdealsUpTo(prec, F);
-  M`Ideals := Is;
-  // primes
-  M`Primes := PrimesUpTo(prec, F);
-  // dictionary
-  dictionary := AssociativeArray();
-  for i := 1 to #Is do
-    dictionary[Is[i]] := i;
-  end for;
-  M`Dictionary := dictionary;
-  return M;
+// TODO: some checks here? or leave it up to the user?
+intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt], chi::GrpHeckeElt) -> ModFrmHilD
+  {}
+  spaces := Spaces(M);
+  if N in Keys(spaces) then
+    if <k, chi> in Keys(spaces[N]) then
+      return spaces[N][<k, chi>];
+    end if;
+  end if;
+  Mk := ModFrmHilDInitialize();
+  Mk`Parent := M;
+  Mk`Weight := k;
+  Mk`Level := N;
+  Mk`Character := chi;
+  AddToSpaces(M, Mk, N, k, chi);
+  return Mk;
 end intrinsic;
 
-intrinsic ModFrmHilDCopy(M::ModFrmHilD) -> ModFrmHilD
+// overloaded for trivial level and character
+intrinsic HMFSpace(M::ModFrmHilDGRng, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+  {}
+  Mk := ModFrmHilDInitialize();
+  Mk`Weight := k;
+  ZF := Integers(M);
+  N := ideal<ZF|1>;
+  X := HeckeCharacterGroup(N);
+  chi := X!1;
+  return HMFSpace(M, N, k, chi);
+end intrinsic;
+
+// overloaded for trivial character
+intrinsic HMFSpace(M::ModFrmHilDGRng, N::RngOrdIdl, k::SeqEnum[RngIntElt]) -> ModFrmHilD
+  {}
+  Mk := ModFrmHilDInitialize();
+  Mk`Weight := k;
+  ZF := Integers(M);
+  X := HeckeCharacterGroup(N);
+  chi := X!1;
+  return HMFSpace(M, N, k, chi);
+end intrinsic;
+
+intrinsic ModFrmHilDCopy(Mk::ModFrmHilD) -> ModFrmHilD
   {new instance of ModFrmHilD.}
-  M1 := ModFrmHilDInitialize();
-  for attr in GetAttributes(Type(M)) do
-    if assigned M``attr then
-      M1``attr := M``attr;
+  M1k := ModFrmHilDInitialize();
+  for attr in GetAttributes(Type(Mk)) do
+    if assigned Mk``attr then
+      M1k``attr := Mk``attr;
     end if;
   end for;
-  return M1;
+  return M1k;
 end intrinsic;
 
-intrinsic GetPosition(M::ModFrmHilD, nu::RngOrdElt) -> RngIntElt
-  {returns the position of ideal generated by nu.}
-  ZF := Integers(BaseField(M));
-  if nu eq ZF!0 then
-    return 1;
-  end if;
-  if assigned M`DictionaryRepresentatives then
-    return M`DictionaryRepresentatives[nu];
-  else
-    assert nu in ZF;
-    // I_nu := ideal< ZF | nu >*Different(ZF);
-    I_nu := ideal< ZF | nu >;
-    assert Norm(I_nu) le Precision(M);
-    return Dictionary(M)[I_nu];
-  end if;
+
+intrinsic NumberOfCusps(Mk::ModFrmHilD) -> RngIntElt
+  {Returns the number of cusps for Gamma_0(N)}
+  M := Parent(Mk);
+  N := Level(Mk);
+  ZF := Integers(M);
+  U := UnitGroup(M);
+  mU := UnitGroupMap(M);
+  h := NarrowClassNumber(M);
+  require h eq 1: "Not verified for Cl^+(F) > 1";
+  // Helper function
+  phi_u := function(aa)
+    Q, mQ := quo<ZF | aa>;
+    U1,mU1 := UnitGroup(Q);
+    S := sub<U1 | [(mQ(mU(e)))@@mU1 : e in Generators(U)]>;
+    return Integers()!(#U1/#S);
+  end function;
+  return h*(&+[phi_u(dd + N/dd) : dd in Divisors(N)]);
 end intrinsic;
 
-intrinsic GetPosition(M::ModFrmHilD, I::RngOrdIdl) -> RngIntElt
-  {returns the position of ideal.}
-  return Dictionary(M)[I];
+
+
+intrinsic Dimension(Mk::ModFrmHilD) -> RngIntElt
+  {Returns the number of cusps for Gamma_0(N)}
+  M := Parent(Mk);
+  ZF := Integers(M);
+  return NumberOfCusps(Mk) + Trace(Mk,1*ZF);
 end intrinsic;
 
-intrinsic HMFEquipWithMultiplication(M::ModFrmHilD) -> ModFrmHilD
-  {Assign representatives and a dictionary for it to M.}
-  ZF := Integers(BaseField(M));
-  indices := GetIndexPairs(M);
-  reps := [elt[1] : elt in indices];
-  reps_indexed := [ ZF!0 : i in [1..#reps] ];
-  dict_reps := AssociativeArray();
-  for nu in reps do
-    dict_reps[nu] := GetPosition(M, ZF!nu);
-  end for;
-  mult_table := [[] : nu in reps];
-  for i := 1 to #indices do
-    nu_i := indices[i][1];
-    pairs_i := indices[i][2];
-    list_i := [[dict_reps[elt[1]], dict_reps[elt[2]]] : elt in pairs_i];
-    mult_table[dict_reps[nu_i]] := list_i;
-    reps_indexed[dict_reps[nu_i]] := nu_i;
-    // assert nu_i eq ShintaniGenerator(M, Ideals(M)[i]);
-  end for;
-  M`Representatives := reps_indexed;
-  M`MultiplicationTable := mult_table;
-  M`DictionaryRepresentatives := dict_reps;
-  return true;
+
+// We eventually want to replace this with the Dimension intrinsic (above). However we need to wait for Trace to work. 
+intrinsic ComputeDimension(Mk::ModFrmHilD)
+{compute the dimension of Mk and store it in Mk}
+// we rely on HilbertCuspForms, which only works for trivial character
+assert Character(Mk) eq HeckeCharacterGroup(Level(Mk))!1;
+EB:=EisensteinBasis(Mk);
+cusps := HilbertCuspForms(BaseField(Parent(Mk)),Level(Mk),Weight(Mk));
+dim := #EB + Dimension(cusps);
+Mk`Dimension := dim;
 end intrinsic;

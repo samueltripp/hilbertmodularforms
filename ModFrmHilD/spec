@@ -1,11 +1,33 @@
 {
+  GradedRing.m
   Space.m
   Elements.m
-  Multiplication.m
-  LinearAlgebra.m
-  ThetaSeries.m
-  Recognize.m
   Workspace.m
+  Formatting.m
+  Hecke.m
+  Basis.m
+}
+
+Multiplication
+{
+   Multiplication.m
+   Shintani.m
+}
+
+Creation
+{
+   Newforms.m
+   EisensteinSeries.m
+   ThetaSeries.m
+   Recognize.m
+   Igusa.m
+   Siegel.m
+   EllipticCurve.m
+   TraceForm.m
+}
+
+CanonicalRing
+{
   CanonicalRing.m
   HilbertSeries.m
 }

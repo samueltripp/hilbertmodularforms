@@ -24,7 +24,9 @@ end intrinsic;
 
 intrinsic MultLaw(classrep::RngOrdIdl) -> any
 {Computes coefficients of e_1^2, e_1e_2, and e_2^2 in terms of e_1 and e_2}
+
 basechange := MatrixAlgebra(Rationals(),2)!Transpose(BasisMatrix(classrep));
+
 e1 := Basis(classrep)[1];
 e2 := Basis(classrep)[2];
 
@@ -32,11 +34,11 @@ e11 := Transpose(Matrix(Rationals(),[Eltseq(e1*e1)]));
 e12 := Transpose(Matrix(Rationals(),[Eltseq(e1*e2)]));
 e22 := Transpose(Matrix(Rationals(),[Eltseq(e2*e2)]));
 
-a := Transpose(basechange^(-1)*e11);
-b := Transpose(basechange^(-1)*e12);
-c := Transpose(basechange^(-1)*e22);
+a := Eltseq(Transpose(basechange^(-1)*e11));
+b := Eltseq(Transpose(basechange^(-1)*e12));
+c := Eltseq(Transpose(basechange^(-1)*e22));
 
-return [a,b,c];
+return a,b,c;
 end intrinsic;
 
 intrinsic Constraint(m1::RngIntElt, r::SeqEnum[FldRatElt]) -> any
@@ -60,12 +62,12 @@ intrinsic Coeff(classrep::RngOrdIdl, elt::RngOrdElt, siegelWeight::RngIntElt) ->
 {Given a fractional ideal classrep representing a class in the narrow class group,
     an element in that classrep, and a siegel weight, computes the coefficient
     of the pullback of the siegel eisenstein form of that weight at that elt}
-verbose := false;
+verbose := true;
 
 coeff := 0;
 
-multlaw := MultLaw(classrep);
-a := Eltseq(multlaw[1]); b := Eltseq(multlaw[2]); c := Eltseq(multlaw[3]);
+a,b,c := MultLaw(classrep);
+
 
 e1 := Basis(classrep)[1];
 e2 := Basis(classrep)[2];
@@ -91,7 +93,7 @@ end if;
 // Add the intial value if it is positive and satisfies constraints
 m1 := ComputeMiddleM1(r);
 if (Constraint(m1, r) ge 0) then
-			      T := SiegelMatrix(m1, r);
+T := SiegelMatrix(m1, r);
 sat, newT := SatisfiesRules(T);
 if sat then
 newcoeff := SiegelCoeff(siegelWeight,newT[1],newT[2],newT[3]);
@@ -147,14 +149,14 @@ intrinsic SiegelEisensteinPullback(M::ModFrmHilDGRng, Weight::RngIntElt) -> any
 
   max := #reps;
   // Once we can do higher class number get rid of this max = 1;
-  max := 1;
+  //max := 1;
   coeffs := AssociativeArray();
   for i := 1 to max do
      repcoeffs := AssociativeArray();
-     numcoeffs := #ShintaniReps(M)[reps[i]];
      elts := ShintaniReps(M)[reps[i]];
+     numcoeffs:=#elts;
   for j := 1 to numcoeffs do
-       repcoeffs[ShintaniRepresentativeToIdeal(reps[i],elts[j])]:=Coeff(reps[i],elts[j],Weight);
+       repcoeffs[ShintaniRepresentativeToIdeal(M,reps[i],elts[j])]:=Coeff(reps[i],elts[j],Weight);
   end for;
   coeffs[reps[i]]:=repcoeffs;
 
